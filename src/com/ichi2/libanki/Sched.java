@@ -509,14 +509,14 @@ public class Sched {
 									"_deckRevLimitSingle", JSONObject.class),
 							Sched.class.getDeclaredMethod("_cntFnRev",
 									long.class, int.class));
-					float totalNewCount = newCount(didLimit);
-					float totalCount = cardCount(didLimit);
-					float matureCount = matureCount(didLimit);
-					matProgress = matureCount / totalCount;
-					allProgress = 1 - ((totalNewCount + lrnCount) / totalCount) - matProgress;
+					//float totalNewCount = newCount(didLimit);
+					//float totalCount = cardCount(didLimit);
+					//float matureCount = matureCount(didLimit);
+					//matProgress = matureCount / totalCount;
+					//allProgress = 1 - ((totalNewCount + lrnCount) / totalCount) - matProgress;
 				}
 				dids.add(new Object[] { g.getString("name"), did, newCount,
-						lrnCount, revCount, matProgress, allProgress });
+						lrnCount, revCount, 0, 0 });
 			} catch (JSONException e) {
 				throw new RuntimeException(e);
 			} catch (NoSuchMethodException e) {
