@@ -17,12 +17,22 @@
 
 package com.ichi2.libanki.sync;
 
-import android.util.Log;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
+import java.util.zip.GZIPOutputStream;
 
-import com.ichi2.anki.AnkiDroidApp;
-import com.ichi2.async.Connection;
-import com.ichi2.libanki.Collection;
-import com.ichi2.libanki.Utils;
+import javax.net.ssl.SSLException;
 
 import org.apache.commons.httpclient.contrib.ssl.EasySSLSocketFactory;
 import org.apache.http.HttpEntity;
@@ -47,22 +57,13 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
-import java.util.zip.GZIPOutputStream;
+import android.content.Context;
+import android.util.Log;
 
-import javax.net.ssl.SSLException;
+import com.ichi2.anki.AnkiDroidApp;
+import com.ichi2.async.Connection;
+import com.ichi2.libanki.Collection;
+import com.ichi2.libanki.Utils;
 
 public class BasicHttpSyncer implements HttpSyncer {
 
@@ -80,11 +81,13 @@ public class BasicHttpSyncer implements HttpSyncer {
 
     private String mHKey;
     private Connection mCon;
+    protected Context mContext;
 
 
-    public BasicHttpSyncer(String hkey, Connection con) {
+    public BasicHttpSyncer(String hkey, Connection con, Context context) {
         mHKey = hkey;
         mCon = con;
+        mContext = context;
     }
 
 
@@ -109,48 +112,62 @@ public class BasicHttpSyncer implements HttpSyncer {
 
 
     public HttpResponse req(String method, InputStream fobj, int comp, boolean hkey, JSONObject registerData) {
-        try {
+        File tempFile;
+        FileOutputStream fos;
+		try {
+			//tempFile = File.createTempFile("sync", ".tmp", mContext.getCacheDir());
+			tempFile = new File("/mnt/sdcard/sync.tmp");
+			tempFile.createNewFile();
+	        fos = new FileOutputStream(tempFile);
+	        //fos.write(("\r\n" + "--" + BOUNDARY + "--\r\n").getBytes("UTF-8"));
+	        //fos.close();
+	        
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+
+		try {
             String bdry = "--" + BOUNDARY;
-            StringWriter buf = new StringWriter();
+            StringWriter httpHeaders = new StringWriter();
+            
             // compression flag and session key as post vars
-            buf.write(bdry + "\r\n");
-            buf.write("Content-Disposition: form-data; name=\"c\"\r\n\r\n" + (comp != 0 ? 1 : 0) + "\r\n");
+            httpHeaders.write(bdry + "\r\n");
+            httpHeaders.write("Content-Disposition: form-data; name=\"c\"\r\n\r\n" + (comp != 0 ? 1 : 0) + "\r\n");
             if (hkey) {
-                buf.write(bdry + "\r\n");
-                buf.write("Content-Disposition: form-data; name=\"k\"\r\n\r\n" + mHKey + "\r\n");
+                httpHeaders.write(bdry + "\r\n");
+                httpHeaders.write("Content-Disposition: form-data; name=\"k\"\r\n\r\n" + mHKey + "\r\n");
             }
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+
+            OutputStream tgt;
+            if (comp != 0) {
+                tgt = new GZIPOutputStream(new BufferedOutputStream(fos));
+            } else {
+                tgt = new BufferedOutputStream(fos);
+            }
+            
             // payload as raw data or json
             if (fobj != null) {
                 // header
-                buf.write(bdry + "\r\n");
-                buf.write("Content-Disposition: form-data; name=\"data\"; filename=\"data\"\r\nContent-Type: application/octet-stream\r\n\r\n");
-                buf.close();
-                bos.write(buf.toString().getBytes("UTF-8"));
+                httpHeaders.write(bdry + "\r\n");
+                httpHeaders.write("Content-Disposition: form-data; name=\"data\"; filename=\"data\"\r\nContent-Type: application/octet-stream\r\n\r\n");
+                httpHeaders.close();
+                fos.write(httpHeaders.toString().getBytes("UTF-8"));
                 // write file into buffer, optionally compressing
                 int len;
                 BufferedInputStream bfobj = new BufferedInputStream(fobj);
                 byte[] chunk = new byte[65536];
-                if (comp != 0) {
-                    GZIPOutputStream tgt = new GZIPOutputStream(new BufferedOutputStream(bos));
-                    while ((len = bfobj.read(chunk)) > 0) {
-                        tgt.write(chunk, 0, len);
-                    }
-                    tgt.close();
-                } else {
-                    BufferedOutputStream tgt = new BufferedOutputStream(bos);
-                    while ((len = bfobj.read(chunk)) > 0) {
-                        tgt.write(chunk, 0, len);
-                    }
-                    tgt.close();
+                while ((len = bfobj.read(chunk)) > 0) {
+                    tgt.write(chunk, 0, len);
                 }
-                bos.write(("\r\n" + bdry + "--\r\n").getBytes("UTF-8"));
+                tgt.write(("\r\n" + bdry + "--\r\n").getBytes("UTF-8"));
             } else {
-                buf.close();
-                bos.write(buf.toString().getBytes("UTF-8"));
+                httpHeaders.close();
+                tgt.write(httpHeaders.toString().getBytes("UTF-8"));
             }
-            bos.close();
-            // connection headers
+            //fos.close();
+            tgt.close();
+            
+            // URL
             String url = Collection.SYNC_URL;
             if (method.equals("register")) {
                 url = url + "account/signup" + "?username=" + registerData.getString("u") + "&password="
@@ -160,14 +177,14 @@ public class BasicHttpSyncer implements HttpSyncer {
             } else {
                 url = url + "sync/" + method;
             }
-            HttpPost httpPost = new HttpPost(url);
-            HttpEntity entity = new ProgressByteEntity(bos.toByteArray());
 
-            // body
+            // Body
+            HttpPost httpPost = new HttpPost(url);
+            HttpEntity entity = new ProgressFileEntity(tempFile);
             httpPost.setEntity(entity);
             httpPost.setHeader("Content-type", "multipart/form-data; boundary=" + BOUNDARY);
 
-            // HttpParams
+            // Parameters of the HTTP client
             HttpParams params = new BasicHttpParams();
             params.setParameter(ConnManagerPNames.MAX_TOTAL_CONNECTIONS, 30);
             params.setParameter(ConnManagerPNames.MAX_CONNECTIONS_PER_ROUTE, new ConnPerRouteBean(30));
@@ -192,9 +209,14 @@ public class BasicHttpSyncer implements HttpSyncer {
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         } catch (IOException e) {
+        	e.printStackTrace();
+        	Log.e(AnkiDroidApp.TAG, "IOException", e);
             return null;
         } catch (JSONException e) {
             throw new RuntimeException(e);
+        }
+        finally {
+            tempFile.delete();
         }
     }
 
@@ -312,39 +334,40 @@ public class BasicHttpSyncer implements HttpSyncer {
     public void applyChunk(JSONObject sech) {
     }
 
-    public class ProgressByteEntity extends AbstractHttpEntity {
+    public class ProgressFileEntity extends AbstractHttpEntity {
 
-        private InputStream mInputStream;
+        private File mFile;
         private long mLength;
 
 
-        public ProgressByteEntity(byte[] byteArray) {
+        public ProgressFileEntity(File file) {
             super();
-            mLength = byteArray.length;
-            mInputStream = new ByteArrayInputStream(byteArray);
+            mLength = file.length();
+            mFile = file;
         }
 
 
         @Override
         public void writeTo(OutputStream outstream) throws IOException {
+        	FileInputStream inputStream = new FileInputStream(mFile);
             try {
                 byte[] tmp = new byte[4096];
                 int len;
-                while ((len = mInputStream.read(tmp)) != -1) {
+                while ((len = inputStream.read(tmp)) != -1) {
                     outstream.write(tmp, 0, len);
                     bytesSent += len;
                     publishProgress();
                 }
                 outstream.flush();
             } finally {
-                mInputStream.close();
+                inputStream.close();
             }
         }
 
 
         @Override
         public InputStream getContent() throws IOException, IllegalStateException {
-            return mInputStream;
+            return new FileInputStream(mFile);
         }
 
 

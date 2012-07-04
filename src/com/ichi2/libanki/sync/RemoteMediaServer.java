@@ -16,25 +16,26 @@
 
 package com.ichi2.libanki.sync;
 
-import android.util.Log;
-
-import com.ichi2.anki.AnkiDroidApp;
-import com.ichi2.async.Connection;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.List;
 
 import org.apache.http.HttpResponse;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.List;
+import android.content.Context;
+import android.util.Log;
+
+import com.ichi2.anki.AnkiDroidApp;
+import com.ichi2.async.Connection;
 
 public class RemoteMediaServer extends BasicHttpSyncer {
 
-    public RemoteMediaServer(String hkey, Connection con) {
-        super(hkey, con);
+    public RemoteMediaServer(String hkey, Connection con, Context context) {
+        super(hkey, con, context);
     }
 
 

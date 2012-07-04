@@ -18,34 +18,6 @@
 
 package com.ichi2.async;
 
-import android.app.Application;
-import android.content.Context;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabaseCorruptException;
-import android.net.ConnectivityManager;
-import android.net.Uri;
-import android.os.AsyncTask;
-import android.util.Log;
-
-import com.ichi2.anki.AnkiDatabaseManager;
-import com.ichi2.anki.AnkiDb;
-import com.ichi2.anki.AnkiDroidApp;
-import com.ichi2.anki.Feedback;
-import com.ichi2.anki2.R;
-import com.ichi2.libanki.Collection;
-import com.ichi2.libanki.Decks;
-import com.ichi2.libanki.Sched;
-import com.ichi2.libanki.sync.FullSyncer;
-import com.ichi2.libanki.sync.BasicHttpSyncer;
-import com.ichi2.libanki.sync.MediaSyncer;
-import com.ichi2.libanki.sync.RemoteMediaServer;
-import com.ichi2.libanki.sync.RemoteServer;
-import com.ichi2.libanki.sync.Syncer;
-
-import org.apache.http.HttpResponse;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -65,6 +37,33 @@ import java.util.HashMap;
 import java.util.TreeSet;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+
+import org.apache.http.HttpResponse;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import android.app.Application;
+import android.content.Context;
+import android.database.Cursor;
+import android.net.ConnectivityManager;
+import android.net.Uri;
+import android.os.AsyncTask;
+import android.util.Log;
+
+import com.ichi2.anki.AnkiDatabaseManager;
+import com.ichi2.anki.AnkiDb;
+import com.ichi2.anki.AnkiDroidApp;
+import com.ichi2.anki.Feedback;
+import com.ichi2.anki2.R;
+import com.ichi2.libanki.Collection;
+import com.ichi2.libanki.Decks;
+import com.ichi2.libanki.Sched;
+import com.ichi2.libanki.sync.BasicHttpSyncer;
+import com.ichi2.libanki.sync.FullSyncer;
+import com.ichi2.libanki.sync.MediaSyncer;
+import com.ichi2.libanki.sync.RemoteMediaServer;
+import com.ichi2.libanki.sync.RemoteServer;
+import com.ichi2.libanki.sync.Syncer;
 
 public class Connection extends AsyncTask<Connection.Payload, Object, Connection.Payload> {
 
@@ -238,7 +237,7 @@ public class Connection extends AsyncTask<Connection.Payload, Object, Connection
     private Payload doInBackgroundLogin(Payload data) {
         String username = (String) data.data[0];
         String password = (String) data.data[1];
-        BasicHttpSyncer server = new RemoteServer(this, null);
+        BasicHttpSyncer server = new RemoteServer(this, null, sContext);
         HttpResponse ret = server.hostKey(username, password);
         String hostkey = null;
         boolean valid = false;
@@ -337,7 +336,7 @@ public class Connection extends AsyncTask<Connection.Payload, Object, Connection
             return data;
         }
         // step 2: upload zip file to upgrade service and get token
-        BasicHttpSyncer h = new BasicHttpSyncer(null, null);
+        BasicHttpSyncer h = new BasicHttpSyncer(null, null, sContext);
         // note: server doesn't expect it to be gzip compressed, because the zip file is compressed
         publishProgress(new Object[] { R.string.upgrade_decks_upload });
         try {
@@ -419,7 +418,7 @@ public class Connection extends AsyncTask<Connection.Payload, Object, Connection
     private Payload doInBackgroundRegister(Payload data) {
         String username = (String) data.data[0];
         String password = (String) data.data[1];
-        BasicHttpSyncer server = new RemoteServer(this, null);
+        BasicHttpSyncer server = new RemoteServer(this, null, sContext);
         HttpResponse ret = server.register(username, password);
         String hostkey = null;
         boolean valid = false;
@@ -470,7 +469,7 @@ public class Connection extends AsyncTask<Connection.Payload, Object, Connection
         }
         String path = col.getPath();
 
-        BasicHttpSyncer server = new RemoteServer(this, hkey);
+        BasicHttpSyncer server = new RemoteServer(this, hkey, sContext);
         Syncer client = new Syncer(col, server);
 
         // run sync and check state
@@ -503,7 +502,7 @@ public class Connection extends AsyncTask<Connection.Payload, Object, Connection
             }
         } else {
             try {
-                server = new FullSyncer(col, hkey, this);
+                server = new FullSyncer(col, hkey, this, sContext);
                 if (conflictResolution.equals("upload")) {
                     Log.i(AnkiDroidApp.TAG, "Sync - fullsync - upload collection");
                     publishProgress(R.string.sync_preparing_full_sync_message);
@@ -551,7 +550,7 @@ public class Connection extends AsyncTask<Connection.Payload, Object, Connection
         // then move on to media sync
         boolean noMediaChanges = false;
         if (media) {
-            server = new RemoteMediaServer(hkey, this);
+            server = new RemoteMediaServer(hkey, this, sContext);
             MediaSyncer mediaClient = new MediaSyncer(col, (RemoteMediaServer) server);
             String ret = mediaClient.sync(mediaUsn, this);
             if (ret.equals("noChanges")) {

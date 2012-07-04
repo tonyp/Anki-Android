@@ -24,6 +24,7 @@ import java.io.InputStream;
 
 import org.apache.http.HttpResponse;
 
+import android.content.Context;
 import android.database.sqlite.SQLiteDatabaseCorruptException;
 import android.util.Log;
 
@@ -40,8 +41,8 @@ public class FullSyncer extends BasicHttpSyncer {
     Connection mCon;
 
 
-    public FullSyncer(Collection col, String hkey, Connection con) {
-        super(hkey, con);
+    public FullSyncer(Collection col, String hkey, Connection con, Context context) {
+        super(hkey, con, context);
         mCol = col;
         mCon = con;
     }

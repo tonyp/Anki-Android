@@ -25,13 +25,15 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.content.Context;
+
 import com.ichi2.async.Connection;
 import com.ichi2.libanki.Collection;
 
 public class RemoteServer extends BasicHttpSyncer {
 
-    public RemoteServer(Connection con, String hkey) {
-        super(hkey, con);
+    public RemoteServer(Connection con, String hkey, Context context) {
+        super(hkey, con, context);
     }
 
 

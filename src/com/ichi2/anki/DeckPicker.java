@@ -85,6 +85,7 @@ import org.json.JSONException;
 public class DeckPicker extends FragmentActivity {
 
     public static final int CRAM_DECK_FRAGMENT = -1;
+    
     /**
      * Dialogs
      */
