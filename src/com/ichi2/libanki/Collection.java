@@ -101,7 +101,7 @@ public class Collection {
             +
             // other config
             "'curModel': None, " + "'nextPos': 1, " + "'sortType': \"noteFld\", "
-            + "'sortBackwards': False, 'addToCur': True }";
+            + "'sortBackwards': False, 'addToCur': True }"; // add new to currently selected deck?
 
     public static final int UNDO_REVIEW = 0;
     public static final int UNDO_EDIT_NOTE = 1;
@@ -121,6 +121,7 @@ public class Collection {
     	return openCollection(path, false);
     }
     public static synchronized Collection openCollection(String path, boolean openedByWidget) {
+    	Log.i(AnkiDroidApp.TAG, "openCollection");
     	if (sCurrentCollection == null || !sCurrentCollection.mPath.equals(path)) {
             sCurrentCollection = Storage.Collection(path);    		
             sCurrentCollection.mOpenedByWidget = openedByWidget;
@@ -820,6 +821,9 @@ public class Collection {
      * Bulk delete cards by ID.
      */
     public void remCards(long[] ids) {
+    	remCards(ids, true);
+    }
+    public void remCards(long[] ids, boolean notes) {
         if (ids.length == 0) {
             return;
         }
@@ -831,6 +835,9 @@ public class Collection {
         mDb.execute("DELETE FROM cards WHERE id IN " + sids);
         mDb.execute("DELETE FROM revlog WHERE cid IN " + sids);
         // then notes
+        if (!notes) {
+        	return;
+        }
         nids = Utils
                 .arrayList2array(mDb.queryColumn(Long.class, "SELECT id FROM notes WHERE id IN " + Utils.ids2str(nids)
                         + " AND id NOT IN (SELECT nid FROM cards)", 0));
@@ -972,7 +979,7 @@ public class Collection {
                     d.put("q", "Please edit this note and add some cloze deletions.");
                 }
             }
-            fields.put("FrontSide", d.get("q"));
+            fields.put("FrontSide", mMedia.stripAudio(d.get("q")));
 
             // runFilter mungeFields for type "a"
             fparser = new Models.fieldParser(fields);
@@ -991,9 +998,9 @@ public class Collection {
                 if (getModels()._availClozeOrds(model, (String) data[6], false).size() == 0) {
                     d.put("q",
                             AnkiDroidApp.getAppResources().getString(
-                                    com.ichi2.anki2.R.string.empty_cloze_warning,
+                                    com.ichi2.anki.R.string.empty_cloze_warning,
                                     String.format(Locale.US, "<a href=%s#cloze>%s</a>", HELP_SITE, AnkiDroidApp
-                                            .getAppResources().getString(com.ichi2.anki2.R.string.help_cloze))));
+                                            .getAppResources().getString(com.ichi2.anki.R.string.help_cloze))));
                 }
             }
 

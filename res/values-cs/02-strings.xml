@@ -23,6 +23,7 @@
   <string name="CardEditorCancelButton">Zrušit</string>
   <string name="CardEditorSaveButton">Uložit</string>
   <string name="CardEditorLaterButton">Později</string>
+  <string name="CardEditorLaterMessage">Saved information for later</string>
   <string name="CardEditorCardDeck">Karta balíčku: %s</string>
   <string name="CardEditorNoteDeck">Poznámka balíčku: %s</string>
   <string name="CardEditorModel">Typ poznámky:%s</string>
@@ -43,9 +44,7 @@
   <string name="cardeditor_title_add_note">Přidat poznámku</string>
   <string name="cardeditor_title_edit_card">Upravit poznámku</string>
   <string name="factadder_saving_error">Chyba při ukládání poznámky</string>
-  <string name="cardeditor_move_note_too">Přesunout také poznámku</string>
-  <string name="cardeditor_move_to_notes_deck">To note\'s deck</string>
-  <string name="pref_lang_support">Language Settings</string>
+  <string name="pref_lang_support">Language</string>
   <string name="saving_facts">Ukládání poznámky</string>
   <string name="deck">Balíček</string>
   <string name="add">Přidat</string>
@@ -78,6 +77,7 @@
   <string name="simple_interface_hint">Prázdné %s. Mějte na paměti, že jednoduché rozhraní nemůže zobrazit obrázky/zvuky atd.</string>
   <string name="delete_deck">Odstraňování balíčku...\nProsím čekejte.</string>
   <string name="menu_cardbrowser">Card browser</string>
+  <string name="show_hint">Show Hint</string>
   <string name="pref_lang_other">Language Preferences</string>
   <string name="pref_lang_common">LangCommon</string>
   <string name="pref_font_UI">Custom UI Font</string>

@@ -79,7 +79,7 @@ import android.widget.TextView;
 import com.ichi2.anim.ActivityTransitionAnimation;
 import com.ichi2.anim.Animation3D;
 import com.ichi2.anim.ViewAnimation;
-import com.ichi2.anki2.R;
+import com.ichi2.anki.R;
 import com.ichi2.async.DeckTask;
 import com.ichi2.libanki.Card;
 import com.ichi2.libanki.Collection;
@@ -93,7 +93,6 @@ import com.ichi2.themes.StyledOpenCollectionDialog;
 import com.ichi2.themes.StyledProgressDialog;
 import com.ichi2.themes.Themes;
 import com.ichi2.utils.DiffEngine;
-import com.ichi2.utils.RubyParser;
 import com.ichi2.widget.WidgetStatus;
 
 import org.amr.arabic.ArabicUtilities;
@@ -171,25 +170,6 @@ public class Reviewer extends AnkiActivity {
 
     // Type answer pattern
     private static final Pattern sTypeAnsPat = Pattern.compile("\\[\\[type:(.+?)\\]\\]");
-    private static final String sTypeAnswerForm = "<center>\n<input type=text id=typeans onkeypress=\"_typeAnsPress();\"\n   style=\"font-family: '%s'; font-size: %spx;\">\n</center>\n";
-
-    /** Regex patterns used in identifying and fixing Hebrew words, so we can reverse them */
-    private static final Pattern sHebrewPattern = Pattern.compile(
-    // Two cases caught below:
-    // Either a series of characters, starting from a hebrew character...
-            "([[\\u0591-\\u05F4][\\uFB1D-\\uFB4F]]" +
-            // ...followed by hebrew characters, punctuation, parenthesis, spaces, numbers or numerical symbols...
-                    "[[\\u0591-\\u05F4][\\uFB1D-\\uFB4F],.?!;:\"'\\[\\](){}+\\-*/%=0-9\\s]*" +
-                    // ...and ending with hebrew character, punctuation or numerical symbol
-                    "[[\\u0591-\\u05F4][\\uFB1D-\\uFB4F],.?!;:0-9%])|" +
-                    // or just a single Hebrew character
-                    "([[\\u0591-\\u05F4][\\uFB1D-\\uFB4F]])");
-    private static final Pattern sHebrewVowelsPattern = Pattern
-            .compile("[[\\u0591-\\u05BD][\\u05BF\\u05C1\\u05C2\\u05C4\\u05C5\\u05C7]]");
-    // private static final Pattern sBracketsPattern = Pattern.compile("[()\\[\\]{}]");
-    // private static final Pattern sNumeralsPattern = Pattern.compile("[0-9][0-9%]+");
-    private static final Pattern sFenPattern = Pattern.compile("\\[fen ?([^\\]]*)\\]([^\\[]+)\\[/fen\\]");
-    private static final Pattern sFenOrientationPattern = Pattern.compile("orientation *= *\"?(black|white)\"?");
 
     /** to be sento to and from the card editor */
     private static Card sEditorCard;
@@ -226,7 +206,6 @@ public class Reviewer extends AnkiActivity {
     private boolean mPrefFullscreenReview;
     private boolean mshowNextReviewTime;
     private boolean mZoomEnabled;
-    private boolean mPrefUseRubySupport; // Parse for ruby annotations
     private String mCollectionFilename;
     private int mRelativeButtonSize;
     private boolean mDoubleScrolling;
@@ -236,7 +215,6 @@ public class Reviewer extends AnkiActivity {
     private int mShakeIntensity;
     private boolean mShakeActionStarted = false;
     private boolean mPrefFixHebrew; // Apply manual RTL for hebrew text - bug in Android WebView
-    private boolean mPrefConvertFen;
     private boolean mPrefFixArabic;
     // Android WebView
     private boolean mSpeakText;
@@ -1037,11 +1015,9 @@ public class Reviewer extends AnkiActivity {
                 Lookup.initialize(this, mCollectionFilename);
             }
 
-            // Load the template for the card and set on it the available width for images
+            // Load the template for the card
             try {
                 mCardTemplate = Utils.convertStreamToString(getAssets().open("card_template.html"));
-                mCardTemplate = mCardTemplate.replaceFirst("var availableWidth = \\d*;", "var availableWidth = "
-                        + getAvailableWidthInCard() + ";");
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -2151,7 +2127,7 @@ public class Reviewer extends AnkiActivity {
         mPrefOvertime = preferences.getBoolean("overtime", true);
         mPrefTimer = preferences.getBoolean("timer", true);
         mPrefWhiteboard = preferences.getBoolean("whiteboard", false);
-        mPrefWriteAnswers = preferences.getBoolean("writeAnswers", false);
+        mPrefWriteAnswers = preferences.getBoolean("writeAnswers", true);
         mPrefTextSelection = preferences.getBoolean("textSelection", true);
         mLongClickWorkaround = preferences.getBoolean("textSelectionLongclickWorkaround", false);
         // mDeckFilename = preferences.getString("deckFilename", "");
@@ -2159,7 +2135,6 @@ public class Reviewer extends AnkiActivity {
         mInvertedColors = mNightMode;
         mBlackWhiteboard = preferences.getBoolean("blackWhiteboard", true);
         mSwapQA = preferences.getBoolean("swapqa", false);
-        mPrefUseRubySupport = preferences.getBoolean("useRubySupport", false);
         mPrefFullscreenReview = preferences.getBoolean("fullscreenReview", false);
         mshowNextReviewTime = preferences.getBoolean("showNextReviewTime", true);
         mZoomEnabled = preferences.getBoolean("zoom", false);
@@ -2168,7 +2143,6 @@ public class Reviewer extends AnkiActivity {
         mInputWorkaround = preferences.getBoolean("inputWorkaround", false);
         mPrefFixHebrew = preferences.getBoolean("fixHebrewText", false);
         mPrefFixArabic = preferences.getBoolean("fixArabicText", false);
-        mPrefConvertFen = preferences.getBoolean("convertFenText", false);
         mSpeakText = preferences.getBoolean("tts", false);
         mPlaySoundsAtStart = preferences.getBoolean("playSoundsAtStart", true);
         mShowProgressBars = preferences.getBoolean("progressBars", true);
@@ -2428,10 +2402,8 @@ public class Reviewer extends AnkiActivity {
         setInterface();
 
         String question = mCurrentCard.getQuestion(mCurrentSimpleInterface);
-        // preventing rendering {{type:Field}} if type answer is not enabled in preferences
-        //if (typeAnswer()) {
-            question = typeAnsQuestionFilter(question);
-        //}
+        question = typeAnsQuestionFilter(question);
+
         updateMenuItems();
 
         if (mPrefFixArabic) {
@@ -2491,10 +2463,7 @@ public class Reviewer extends AnkiActivity {
         setFlipCardAnimation();
 
         String answer = mCurrentCard.getAnswer(mCurrentSimpleInterface);
-        // preventing rendering {{type:Field}} if type answer is not enabled in preferences
-        //if (typeAnswer()) {
-            answer = typeAnsAnswerFilter(answer);
-        //}
+        answer = typeAnsAnswerFilter(answer);
 
         String displayString = "";
 
@@ -2518,15 +2487,17 @@ public class Reviewer extends AnkiActivity {
             if (typeAnswer()) {
                 mAnswerField.setVisibility(View.GONE);
                 if (mCurrentCard != null) {
+                    if (mPrefFixArabic) {
+                        // reshape
+                        mTypeCorrect = ArabicUtilities.reshapeSentence(mTypeCorrect, true);
+                    }
                     // Obtain the user answer and the correct answer
                     String userAnswer = mAnswerField.getText().toString();
-                    Matcher matcher = sSpanPattern.matcher(Utils.stripHTMLMedia(ArabicUtilities.reshapeSentence(mTypeCorrect, true)));
+                    Matcher matcher = sSpanPattern.matcher(Utils.stripHTMLMedia(mTypeCorrect));
                     String correctAnswer = matcher.replaceAll("");
                     matcher = sBrPattern.matcher(correctAnswer);
                     correctAnswer = matcher.replaceAll("\n");
                     matcher = Sound.sSoundPattern.matcher(correctAnswer);
-                    correctAnswer = matcher.replaceAll("");
-                    matcher = Image.sImagePattern.matcher(correctAnswer);
                     correctAnswer = matcher.replaceAll("");
                     Log.i(AnkiDroidApp.TAG, "correct answer = " + correctAnswer);
 
@@ -2571,29 +2542,13 @@ public class Reviewer extends AnkiActivity {
         }
 
         // mBaseUrl = Utils.getBaseUrl();
-        Boolean isJapaneseModel = false;
 
         // Check whether there is a hard coded font-size in the content and apply the relative font size
         // Check needs to be done before CSS is applied to content;
         content = recalculateHardCodedFontSize(content, mDisplayFontSize);
 
         // Add CSS for font color and font size
-        if (mCurrentCard != null) {
-            final String japaneseModelTag = "Japanese";
-
-            // Decks currentDeck = DeckManager.getMainDeck();
-            // Models myModel = Models.getModel(currentDeck, mCurrentCard.getCardModelId(), false);
-            // if (myModel == null) {
-            // Log.e(AnkiDroidApp.TAG,
-            // "updateCard - no Model could be fetched. Closing Reviewer and showing db-error dialog");
-            // closeReviewer(DeckPicker.RESULT_DB_ERROR, true);
-            // }
-            int nightBackground = Themes.getNightModeCardBackground(this);
-            // content = myModel.getCSSForFontColorSize(mCurrentCard.getCardModelId(), mDisplayFontSize, mNightMode,
-            // nightBackground) + Models.invertColors(content, mNightMode);
-            // isJapaneseModel = myModel.hasTag(japaneseModelTag);
-            // mCurrentBackgroundColor = myModel.getBackgroundColor(mCurrentCard.getCardModelId());
-        } else {
+        if (mCurrentCard == null) {
             mCard.getSettings().setDefaultFontSize(calculateDynamicFontSize(content));
         }
 
@@ -2615,31 +2570,11 @@ public class Reviewer extends AnkiActivity {
         }
         answer = Sound.parseSounds(mBaseUrl, content, mSpeakText, qa);
 
-        // Parse out the LaTeX images
-        // question = LaTeX.parseLaTeX(DeckManager.getMainDeck(), question);
-        // answer = LaTeX.parseLaTeX(DeckManager.getMainDeck(), answer);
-
-        // If ruby annotation support is activated, then parse and handle:
-        // Strip kanji in question, add furigana in answer
-        if (mPrefUseRubySupport && isJapaneseModel) {
-            content = RubyParser.ankiStripKanji(question) + RubyParser.ankiRubyToMarkup(answer);
-        } else {
-            content = question + answer;
-        }
+        content = question + answer;
 
         // In order to display the bold style correctly, we have to change
         // font-weight to 700
         content = content.replace("font-weight:600;", "font-weight:700;");
-
-        // Find hebrew text
-        if (isHebrewFixEnabled()) {
-            content = applyFixForHebrew(content);
-        }
-
-        // Chess notation FEN handling
-        if (this.isFenConversionEnabled()) {
-            content = fenToChessboard(content);
-        }
 
         Log.i(AnkiDroidApp.TAG, "content card = \n" + content);
         StringBuilder style = new StringBuilder();
@@ -2650,6 +2585,9 @@ public class Reviewer extends AnkiActivity {
         if (mNightMode) {
             content = Models.invertColors(content);
         }
+        // Calculate available width and provide it to javascript for image resizing.
+        mCardTemplate = mCardTemplate.replaceFirst("var availableWidth = \\d*;", 
+                String.format(Locale.US, "var availableWidth = %d;", getAvailableWidthInCard()));
 
         mCardContent = new SpannedString(mCardTemplate.replace("::content::", content).replace("::style::",
                 style.toString()));
@@ -2911,11 +2849,6 @@ public class Reviewer extends AnkiActivity {
 
     private boolean isHebrewFixEnabled() {
         return mPrefFixHebrew;
-    }
-
-
-    private boolean isFenConversionEnabled() {
-        return mPrefConvertFen;
     }
 
 
@@ -3259,85 +3192,7 @@ public class Reviewer extends AnkiActivity {
     // return deck.mediaDir();
     // }
 
-    private String applyFixForHebrew(String text) {
-        Matcher m = sHebrewPattern.matcher(text);
-        StringBuffer sb = new StringBuffer();
-        while (m.find()) {
-            String hebrewText = m.group();
-            // Some processing before we reverse the Hebrew text
-            // 1. Remove all Hebrew vowels as they cannot be displayed properly
-            Matcher mv = sHebrewVowelsPattern.matcher(hebrewText);
-            hebrewText = mv.replaceAll("");
-            // 2. Flip open parentheses, brackets and curly brackets with closed
-            // ones and vice-versa
-            // Matcher mp = sBracketsPattern.matcher(hebrewText);
-            // StringBuffer sbg = new StringBuffer();
-            // int bracket[] = new int[1];
-            // while (mp.find()) {
-            // bracket[0] = mp.group().codePointAt(0);
-            // if ((bracket[0] & 0x28) == 0x28) {
-            // // flip open/close ( and )
-            // bracket[0] ^= 0x01;
-            // } else if (bracket[0] == 0x5B || bracket[0] == 0x5D || bracket[0]
-            // == 0x7B || bracket[0] == 0x7D) {
-            // // flip open/close [, ], { and }
-            // bracket[0] ^= 0x06;
-            // }
-            // mp.appendReplacement(sbg, new String(bracket, 0, 1));
-            // }
-            // mp.appendTail(sbg);
-            // hebrewText = sbg.toString();
-            // for (int i = 0; i < hebrewText.length(); i++) {
-            // Log.i(AnkiDroidApp.TAG, "flipped brackets: " +
-            // hebrewText.codePointAt(i));
-            // }
-            // 3. Reverse all numerical groups (so when they get reversed again
-            // they show LTR)
-            // Matcher mn = sNumeralsPattern.matcher(hebrewText);
-            // sbg = new StringBuffer();
-            // while (mn.find()) {
-            // StringBuffer sbn = new StringBuffer(m.group());
-            // mn.appendReplacement(sbg, sbn.reverse().toString());
-            // }
-            // mn.appendTail(sbg);
-
-            // for (int i = 0; i < sbg.length(); i++) {
-            // Log.i(AnkiDroidApp.TAG, "LTR numerals: " + sbg.codePointAt(i));
-            // }
-            // hebrewText = sbg.toString();//reverse().toString();
-            m.appendReplacement(sb, hebrewText);
-        }
-        m.appendTail(sb);
-        return sb.toString();
-    }
-
-
-    private String fenToChessboard(String text) {
-        Matcher mf = sFenPattern.matcher(text);
-        StringBuffer sb = new StringBuffer();
-        while (mf.find()) {
-            if (mf.group(1).length() == 0) {
-                mf.appendReplacement(sb, "<script type=\"text/javascript\">document.write(renderFen('" + mf.group(2)
-                        + "',false));</script>");
-            } else {
-                Matcher mo = sFenOrientationPattern.matcher(mf.group(1));
-                if (mo.find() && mo.group(1).equalsIgnoreCase("black")) {
-                    mf.appendReplacement(sb,
-                            "<script type=\"text/javascript\">document.write(renderFen('" + mf.group(2)
-                                    + "',1));</script>");
-                } else {
-                    mf.appendReplacement(sb,
-                            "<script type=\"text/javascript\">document.write(renderFen('" + mf.group(2)
-                                    + "',false));</script>");
-                }
-            }
-        }
-        mf.appendTail(sb);
-        return sb.toString();
-    }
-
-
-    private void executeCommand(int which) {
+        private void executeCommand(int which) {
         switch (which) {
             case GESTURE_NOTHING:
                 break;

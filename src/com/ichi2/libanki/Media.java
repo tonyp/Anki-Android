@@ -64,6 +64,7 @@ public class Media {
 
     private static final Pattern fMediaRegexps[] = { Pattern.compile("(?i)(\\[sound:([^]]+)\\])"),
             Pattern.compile("(?i)(<img[^>]+src=[\"']?([^\"'>]+)[\"']?[^>]*>)") };
+    private static final Pattern fSoundRegexps = Pattern.compile("\\[sound:.*?\\]");
     private static final Pattern fRemoteFilePattern = Pattern.compile("(https?|ftp)://");
     private static final Pattern fDangerousCharacters = Pattern.compile("[]\\[<>:/\\\\&?\\\"\\|]");
     private static final Pattern fFileOrdinal = Pattern.compile(" \\((\\d+)\\)$");
@@ -247,6 +248,12 @@ public class Media {
             txt = m.replaceAll("");
         }
         return txt;
+    }
+
+
+    public String stripAudio(String txt) {
+    	Matcher m = fSoundRegexps.matcher(txt);
+    	return m.replaceAll("");
     }
 
 
@@ -635,7 +642,7 @@ public class Media {
         if (mediaRem.size() > 0) {
             mMediaDb.executeMany("delete from media where fname = ?", mediaRem);
         }
-        mMediaDb.execute("update meta set dirMod = ?", new Object[] { getDir() });
+        mMediaDb.execute("update meta set dirMod = ?", new Object[] { _mtime(getDir()) });
         // and logs
         mMediaDb.executeMany("insert or replace into log values (?, ?)", log);
     }

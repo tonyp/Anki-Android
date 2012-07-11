@@ -954,9 +954,9 @@ public class Models {
             } else {
                 // hook-based field modifier
                 if (txt == null) {
-                    txt = (String) AnkiDroidApp.getHooks().runFilter("fmod_" + mod, "", extra, ctx, tag, tag_name);
+                    txt = (String) AnkiDroidApp.getHooks().runFilter("fmod_" + mod, "", extra, AnkiDroidApp.getAppResources(), tag, tag_name);
                 } else {
-                    txt = (String) AnkiDroidApp.getHooks().runFilter("fmod_" + mod, txt, extra, ctx, tag, tag_name);
+                    txt = (String) AnkiDroidApp.getHooks().runFilter("fmod_" + mod, txt, extra, AnkiDroidApp.getAppResources(), tag, tag_name);
                 }
                 if (txt == null) {
                     return String.format(Locale.US, "{unknown field %s}", tag_name);
@@ -974,11 +974,11 @@ public class Models {
             // replace chozen cloze with type
             if (type == 'q') {
                 if (m.group(3) != null && m.group(3).length() != 0) {
-                    txt = m.replaceAll(String.format(Locale.US, "<span class=cloze>[%s...]</span>", m.group(3)));
+                    txt = m.replaceAll(String.format(Locale.US, "<span class=cloze>[$3...]</span>"));
                 } else {
                     txt = m.replaceAll("<span class=cloze>[...]</span>");
                 }
-            } else if (type == 'a') {
+            } else {
                 txt = m.replaceAll("<span class=cloze>$1</span>");
             }
             // and display other clozes normally
@@ -1067,7 +1067,7 @@ public class Models {
         try {
             omType = oldModel.getInt("type");
             nmType = newModel.getInt("type");
-            nflds = newModel.getJSONArray("flds").length();
+            nflds = newModel.getJSONArray("tmpls").length();
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }

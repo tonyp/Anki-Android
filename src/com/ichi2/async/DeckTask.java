@@ -33,7 +33,7 @@ import org.json.JSONObject;
 import com.ichi2.anki.AnkiDb;
 import com.ichi2.anki.AnkiDroidApp;
 import com.ichi2.anki.BackupManager;
-import com.ichi2.anki2.R;
+import com.ichi2.anki.R;
 import com.ichi2.libanki.Card;
 import com.ichi2.libanki.Collection;
 import com.ichi2.libanki.Note;
@@ -443,7 +443,12 @@ public class DeckTask extends
 					"doInBackgroundOpenCollection: collection still open - reusing it");
 			col = oldCol;
 		}
-		return new TaskData(col, doInBackgroundLoadDeckCounts(new TaskData(col)).getObjArray());
+		Object[] counts = null;
+		DeckTask.TaskData result = doInBackgroundLoadDeckCounts(new TaskData(col));
+		if (result != null) {
+			counts = result.getObjArray();
+		}
+		return new TaskData(col, counts);
 	}
 
 	private TaskData doInBackgroundLoadDeckCounts(TaskData... params) {
@@ -776,11 +781,13 @@ public class DeckTask extends
 	}
 
 	private TaskData doInBackgroundRestoreDeck(TaskData... params) {
-		// Log.i(AnkiDroidApp.TAG, "doInBackgroundRestoreDeck");
-		// String[] paths = params[0].getDeckList();
-		// return new TaskData(BackupManager.restoreDeckBackup(paths[0],
-		// paths[1]));
-		return null;
+		 Log.i(AnkiDroidApp.TAG, "doInBackgroundRestoreDeck");
+		 Object[] data = params[0].getObjArray();
+		 Collection col = (Collection) data[0];
+		 if (col != null) {
+			 col.close(false);
+		 }
+		 return new TaskData(BackupManager.restoreBackup((String)data[1], (String)data[2]));
 	}
 
 	private TaskData doInBackgroundUpdateCardBrowserList(TaskData... params) {

@@ -16,19 +16,16 @@
 
 package com.ichi2.anki;
 
-import com.ichi2.anki2.R;
-
-import com.ichi2.anim.ActivityTransitionAnimation;
-import com.ichi2.libanki.Collection;
-import com.ichi2.themes.Themes;
-import com.ichi2.widget.WidgetStatus;
-
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.DialogInterface.OnCancelListener;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -36,14 +33,25 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 
+import com.ichi2.anim.ActivityTransitionAnimation;
+import com.ichi2.libanki.Collection;
+import com.ichi2.themes.StyledOpenCollectionDialog;
+import com.ichi2.themes.Themes;
+import com.ichi2.widget.WidgetStatus;
+
 public class StudyOptionsActivity extends FragmentActivity {
 
+    private boolean mInvalidateMenu;
+    
     /** Menus */
     private static final int MENU_PREFERENCES = 201;
     public static final int MENU_ROTATE = 202;
     public static final int MENU_NIGHT = 203;
 
-    private Fragment mCurrentFragment;
+    private StudyOptionsFragment mCurrentFragment;
+
+    private BroadcastReceiver mUnmountReceiver = null;
+    private StyledOpenCollectionDialog mNotMountedDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,6 +69,7 @@ public class StudyOptionsActivity extends FragmentActivity {
         if (savedInstanceState == null) {
         	loadContent(getIntent().getBooleanExtra("onlyFnsMsg", false));
         }
+        registerExternalStorageListener();
     }
 
     public void loadContent(boolean onlyFnsMsg) {
@@ -80,14 +89,27 @@ public class StudyOptionsActivity extends FragmentActivity {
     	} else {
     		icon = R.drawable.ic_menu_night;
     	}
+    	
+    	mInvalidateMenu = false;
         UIUtils.addMenuItemInActionBar(menu, Menu.NONE, MENU_NIGHT, Menu.NONE, R.string.night_mode,
                 icon);
-
         UIUtils.addMenuItem(menu, Menu.NONE, MENU_PREFERENCES, Menu.NONE, R.string.menu_preferences,
                 R.drawable.ic_menu_preferences);
         UIUtils.addMenuItem(menu, Menu.NONE, MENU_ROTATE, Menu.NONE, R.string.menu_rotate,
                 android.R.drawable.ic_menu_always_landscape_portrait);
         return true;
+    }
+
+    
+    @Override
+    public boolean onMenuOpened(int featureId, Menu menu) {
+        if (mInvalidateMenu) {
+            menu.clear();
+            onCreateOptionsMenu(menu);
+            mInvalidateMenu = false;
+        }
+
+        return super.onMenuOpened(featureId, menu);
     }
 
 
@@ -130,6 +152,20 @@ public class StudyOptionsActivity extends FragmentActivity {
         }
     }
 
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent intent) {
+        super.onActivityResult(requestCode, resultCode, intent);
+        Log.i(AnkiDroidApp.TAG, "StudyOptionsActivity: onActivityResult");
+        
+        String newLanguage = AnkiDroidApp.getSharedPrefs(this).getString("language", "");
+        if (!AnkiDroidApp.getLanguage().equals(newLanguage)) {
+            AnkiDroidApp.setLanguage(newLanguage);
+            mInvalidateMenu = true;
+        }
+        mCurrentFragment.restorePreferences();
+    }
+
+
 
     private void closeStudyOptions() {
         closeStudyOptions(RESULT_OK);
@@ -164,7 +200,7 @@ public class StudyOptionsActivity extends FragmentActivity {
     @Override
     public void onStop() {
         super.onStop();
-        if (!isFinishing() && mCurrentFragment != null && ((StudyOptionsFragment)mCurrentFragment).dbSaveNecessary()) {
+        if (!isFinishing() && mCurrentFragment != null && mCurrentFragment.dbSaveNecessary()) {
             WidgetStatus.update(this);
             UIUtils.saveCollectionInBackground(Collection.currentCollection());
         }
@@ -173,9 +209,43 @@ public class StudyOptionsActivity extends FragmentActivity {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
     	if (mCurrentFragment != null) {
-    		return ((StudyOptionsFragment)mCurrentFragment).onTouchEvent(event);
+    		return mCurrentFragment.onTouchEvent(event);
     	} else {
     		return false;
     	}
     }
+
+    private void registerExternalStorageListener() {
+        if (mUnmountReceiver == null) {
+            mUnmountReceiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    if (intent.getAction().equals(Intent.ACTION_MEDIA_EJECT)) {
+                    	if (mNotMountedDialog == null || !mNotMountedDialog.isShowing()) {
+                    		mNotMountedDialog = StyledOpenCollectionDialog.show(StudyOptionsActivity.this, getResources().getString(R.string.sd_card_not_mounted), new OnCancelListener() {
+
+                                @Override
+                                public void onCancel(DialogInterface arg0) {
+                                    finish();
+                                }
+                            });
+                    	}
+                    } else if (intent.getAction().equals(Intent.ACTION_MEDIA_MOUNTED)) {
+                    	if (mNotMountedDialog != null && mNotMountedDialog.isShowing()) {
+                    		mNotMountedDialog.dismiss();                    		
+                    	}
+                    	mCurrentFragment.reloadCollection();
+                    }
+                }
+            };
+            IntentFilter iFilter = new IntentFilter();
+
+            // ACTION_MEDIA_EJECT is never invoked (probably due to an android bug
+            iFilter.addAction(Intent.ACTION_MEDIA_EJECT);
+            iFilter.addAction(Intent.ACTION_MEDIA_MOUNTED);
+            iFilter.addDataScheme("file");
+            registerReceiver(mUnmountReceiver, iFilter);
+        }
+    }
+
 }

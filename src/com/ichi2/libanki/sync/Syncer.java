@@ -21,7 +21,7 @@ import android.database.SQLException;
 import android.util.Log;
 
 import com.ichi2.anki.AnkiDroidApp;
-import com.ichi2.anki2.R;
+import com.ichi2.anki.R;
 import com.ichi2.async.Connection;
 import com.ichi2.libanki.Collection;
 import com.ichi2.libanki.Sched;
@@ -241,7 +241,8 @@ public class Syncer {
         } catch (IllegalStateException e) {
             throw new RuntimeException(e);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+			AnkiDroidApp.saveExceptionReportFile(e, "Syncer-sync");
+        	return new Object[] { "IOException" };
         }
         return new Object[] { "success" };
     }
@@ -605,7 +606,7 @@ public class Syncer {
             // notes first, so we don't end up with duplicate graves
             mCol._remNotes(Utils.jsonArrayToLongArray(graves.getJSONArray("notes")));
             // then cards
-            mCol.remCards(Utils.jsonArrayToLongArray(graves.getJSONArray("cards")));
+            mCol.remCards(Utils.jsonArrayToLongArray(graves.getJSONArray("cards")), false);
             // and decks
             JSONArray decks = graves.getJSONArray("decks");
             for (int i = 0; i < decks.length(); i++) {

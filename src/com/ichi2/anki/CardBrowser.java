@@ -18,7 +18,7 @@ package com.ichi2.anki;
 
 import android.app.Activity;
 
-import com.ichi2.anki2.R;
+import com.ichi2.anki.R;
 
 import android.app.Dialog;
 import android.content.Context;
@@ -736,6 +736,13 @@ public class CardBrowser extends Activity {
 
                     @Override
                     public void onPostExecute(DeckTask.TaskData result) {
+                        if (mOpenCollectionDialog.isShowing()) {
+                            try {
+                            	mOpenCollectionDialog.dismiss();
+                            } catch (Exception e) {
+                                Log.e(AnkiDroidApp.TAG, "onPostExecute - Dialog dismiss Exception = " + e.getMessage());
+                            }
+                        }
                         mCol = result.getCollection();
                         Collection.putCurrentCollection(mCol);
                         if (mCol == null) {
@@ -904,26 +911,23 @@ public class CardBrowser extends Activity {
 					
 					int field = AnkiDroidApp.getSharedPrefs(getBaseContext()).getInt("cardBrowserField", 0);
 					
-					Card tempCard = mCol.getCard(Long.parseLong(cards.get(0).get("id"))); //Long.parseLong(mCards.get(0).get("id"))
-					
-					ArrayList<String> uniqueFields = new ArrayList<String>();
-					
-					if (field > 0 && (mFields != null)) {
+					if (cards.size() > 0 && field > 0 && (mFields != null)) {
+						Card tempCard = mCol.getCard(Long.parseLong(cards.get(0).get("id")));						
+						ArrayList<String> uniqueFields = new ArrayList<String>();
 						for (HashMap<String, String> entry : cards) {
-						tempCard = mCol.getCard(Long.parseLong(entry.get("id")));
-						String item = tempCard.note().getitem(mFields[field]);
-						entry.put("sfld", item);
-						
-						if (!uniqueFields.contains(item)) {
-							uniqueFields.add(item);
-							mAllCards.add(entry);
-							mCards.add(entry);
-						}
-						
+							tempCard = mCol.getCard(Long.parseLong(entry.get("id")));
+							String item = tempCard.note().getitem(mFields[field]);
+							entry.put("sfld", item);
+
+							if (!uniqueFields.contains(item)) {
+								uniqueFields.add(item);
+								mAllCards.add(entry);
+								mCards.add(entry);
+							}						
 						}
 					} else {
-                    mAllCards.addAll(cards);
-                    mCards.addAll(cards);
+						mAllCards.addAll(cards);
+						mCards.addAll(cards);
 					}
 					
 					
@@ -1126,23 +1130,19 @@ public class CardBrowser extends Activity {
 
         private int fontSizeScalePcent;
         private float originalTextSize = -1.0f;
-        private boolean mTibetan;
-        private Typeface mTibTypeface;
-
+        private Typeface mCustomTypeface;
 
         public SizeControlledListAdapter(Context context, List<? extends Map<String, ?>> data, int resource,
                 String[] from, int[] to, int fontSizeScalePcent) {
             super(context, data, resource, from, to);
             this.fontSizeScalePcent = fontSizeScalePcent;
 
-            mTibetan = AnkiDroidApp.isTibetan();
-
-            mTibTypeface = null;
-
-            if (mTibetan) {
-                mTibTypeface = AnkiDroidApp.getTibetanTypeface();
+            // Use custom font if selected from preferences
+            SharedPreferences preferences = AnkiDroidApp.getSharedPrefs(getBaseContext());
+            String customFont = preferences.getString("browserEditorFont", "");
+            if (!customFont.equals("")) {
+                mCustomTypeface = AnkiFont.getTypeface(context, customFont);
             }
-
         }
 
 
@@ -1170,8 +1170,8 @@ public class CardBrowser extends Activity {
                                     * (fontSizeScalePcent / 100.0f));
                         }
 
-                        if (mTibetan) {
-                            ((TextView) child).setTypeface(mTibTypeface);
+                        if (mCustomTypeface != null) {
+                            ((TextView) child).setTypeface(mCustomTypeface);
                         }
 
                     }

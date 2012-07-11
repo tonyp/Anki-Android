@@ -17,7 +17,7 @@
 
 package com.ichi2.libanki;
 
-import com.ichi2.anki2.R;
+import com.ichi2.anki.R;
 
 import android.content.Context;
 import android.database.Cursor;
@@ -1144,7 +1144,12 @@ public class Sched {
             try {
                 delay = ja.getDouble(len - left);
             } catch (JSONException e) {
-                delay = ja.getDouble(0);
+            	if (conf.getJSONArray("delays").length() > 0) {
+            		delay = conf.getJSONArray("delays").getDouble(0);
+            	} else {
+            		// user deleted final step; use dummy value
+            		delay = 1.0;
+            	}
             }
             return (int) (delay * 60.0);
         } catch (JSONException e) {
@@ -2528,7 +2533,7 @@ public class Sched {
 
     /** Put cards at the end of the new queue. */
     public void forgetCards(long[] ids) {
-        mCol.getDb().execute("update cards set type=0,queue=0,ivl=0 where id in " + Utils.ids2str(ids));
+        mCol.getDb().execute("update cards set type=0,queue=0,ivl=0,factor=2500 where id in " + Utils.ids2str(ids));
         int pmax = mCol.getDb().queryScalar("SELECT max(due) FROM cards WHERE type=0", false);
         // takes care of mod + usn
         sortCards(ids, pmax + 1);

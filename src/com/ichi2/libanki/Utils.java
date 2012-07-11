@@ -75,7 +75,7 @@ import android.widget.LinearLayout;
 import com.ichi2.anki.AnkiDb;
 import com.ichi2.anki.AnkiDroidApp;
 import com.ichi2.anki.AnkiFont;
-import com.ichi2.anki2.R;
+import com.ichi2.anki.R;
 import com.mindprod.common11.BigDate;
 
 /**

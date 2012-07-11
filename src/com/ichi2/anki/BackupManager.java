@@ -16,7 +16,7 @@
 
 package com.ichi2.anki;
 
-import com.ichi2.anki2.R;
+import com.ichi2.anki.R;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -262,7 +262,7 @@ public class BackupManager {
 
     public static int restoreBackup(String path, String backupPath) {
         // rename old file and move it to subdirectory
-        if ((new File(path)).exists() && !moveDatabaseToBrokenFolder(path, false)) {
+        if (!(new File(path)).exists() || !moveDatabaseToBrokenFolder(path, false)) {
             return RETURN_ERROR;
         }
 
@@ -375,22 +375,6 @@ public class BackupManager {
     }
 
 
-    //
-    //
-    // public static boolean removeDeck(File deckFile) {
-    // String deckName = deckFile.getName();
-    // File directory = new File(deckFile.getParent());
-    // for (File f : directory.listFiles()) {
-    // if (f.getName().startsWith(deckName)) {
-    // if (!removeDir(f)) {
-    // return false;
-    // }
-    // }
-    // }
-    // return true;
-    // }
-    //
-    //
     public static boolean deleteDeckBackups(String colFile, int keepNumber) {
         return deleteDeckBackups(getBackups(new File(colFile)), keepNumber);
     }

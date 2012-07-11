@@ -54,7 +54,7 @@ import com.ichi2.anki.AnkiDatabaseManager;
 import com.ichi2.anki.AnkiDb;
 import com.ichi2.anki.AnkiDroidApp;
 import com.ichi2.anki.Feedback;
-import com.ichi2.anki2.R;
+import com.ichi2.anki.R;
 import com.ichi2.libanki.Collection;
 import com.ichi2.libanki.Decks;
 import com.ichi2.libanki.Sched;
@@ -422,21 +422,23 @@ public class Connection extends AsyncTask<Connection.Payload, Object, Connection
         HttpResponse ret = server.register(username, password);
         String hostkey = null;
         boolean valid = false;
-        data.returnType = ret.getStatusLine().getStatusCode();
         String status = null;
-        if (data.returnType == 200) {
-            try {
-                JSONObject jo = (new JSONObject(server.stream2String(ret.getEntity().getContent())));
-                status = jo.getString("status");
-                if (status.equals("ok")) {
-                    hostkey = jo.getString("hkey");
-                    valid = (hostkey != null) && (hostkey.length() > 0);
+        if (ret != null) {
+            data.returnType = ret.getStatusLine().getStatusCode();
+            if (data.returnType == 200) {
+                try {
+                    JSONObject jo = (new JSONObject(server.stream2String(ret.getEntity().getContent())));
+                    status = jo.getString("status");
+                    if (status.equals("ok")) {
+                        hostkey = jo.getString("hkey");
+                        valid = (hostkey != null) && (hostkey.length() > 0);
+                    }
+                } catch (JSONException e) {
+                } catch (IllegalStateException e) {
+                    throw new RuntimeException(e);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
-            } catch (JSONException e) {
-            } catch (IllegalStateException e) {
-                throw new RuntimeException(e);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
             }
         }
         if (valid) {

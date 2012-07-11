@@ -59,13 +59,12 @@ public class AnkiDroidApp extends Application {
      * Singleton instance of this class.
      */
     private static AnkiDroidApp sInstance;
-    private static Typeface mTibTypeface;
-    private static boolean bTibetan;
 
     /**
      * Global hooks
      */
     private Hooks mHooks;
+    private String mLanguage;
 
     /**
      * The name of the shared preferences for this class, as supplied to
@@ -99,6 +98,7 @@ public class AnkiDroidApp extends Application {
         Thread.setDefaultUncaughtExceptionHandler(customExceptionHandler);
 
         SharedPreferences preferences = getSharedPrefs(this);
+        sInstance.mLanguage = mLanguage = preferences.getString("language", "");
         // Assign some default settings if necessary
         if (!preferences.contains("deckPath")) {
             Editor editor = preferences.edit();
@@ -121,37 +121,6 @@ public class AnkiDroidApp extends Application {
      */
     public static SharedPreferences getSharedPrefs(Context context) {
         return context.getSharedPreferences(SHARED_PREFS_NAME, Context.MODE_PRIVATE);
-    }
-
-    public static boolean isTibetan() {
-
-        SharedPreferences preferences = getSharedPrefs(getInstance());
-
-        // check for Tibetan support & Typeface initialisation
-        if (preferences.getBoolean("enableTibetan", false)) {
-            bTibetan = true;
-        } else {
-            bTibetan = false;
-        }
-
-        if (bTibetan && mTibTypeface == null) {
-            String fileName = "/mnt/sdcard/fonts/DDC_Uchen.ttf";
-            // mTibTypeface = Typeface.createFromAsset(getInstance().getAssets(), fileName);
-            File mTibFontFile = new File(fileName);
-            if (mTibFontFile.exists()) {
-                mTibTypeface = Typeface.createFromFile(fileName);
-            } else {
-                return false;
-            }
-
-        }
-
-        return bTibetan;
-    }
-
-
-    public static Typeface getTibetanTypeface() {
-        return mTibTypeface;
     }
 
 
@@ -309,8 +278,11 @@ public class AnkiDroidApp extends Application {
         return Integer.valueOf(android.os.Build.VERSION.SDK);
     }
 
+    public static String getLanguage() {
+        return getInstance().mLanguage;
+    }
 
-    public void setLanguage(String language) {
+    public static void setLanguage(String language) {
         Locale locale;
         if (language.equals("")) {
             locale = Locale.getDefault();
@@ -319,7 +291,8 @@ public class AnkiDroidApp extends Application {
         }
         Configuration config = new Configuration();
         config.locale = locale;
-        this.getResources().updateConfiguration(config, this.getResources().getDisplayMetrics());
+        getInstance().getResources().updateConfiguration(config, getInstance().getResources().getDisplayMetrics());
+        getInstance().mLanguage = language;
     }
 
 
