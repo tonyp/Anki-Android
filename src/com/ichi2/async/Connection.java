@@ -27,17 +27,17 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
 
-import com.ichi2.anki.AnkiDatabaseManager;
-import com.ichi2.anki.AnkiDb;
-import com.ichi2.anki.AnkiDroidApp;
-import com.ichi2.anki.AnkiDroidProxy;
-import com.ichi2.anki.Deck;
-import com.ichi2.anki.DeckManager;
-import com.ichi2.anki.Feedback;
-import com.ichi2.anki.R;
-import com.ichi2.anki.Reviewer;
-import com.ichi2.anki.SyncClient;
-import com.ichi2.anki.Utils;
+import com.ichi2.anki1.R;
+import com.ichi2.anki1.AnkiDatabaseManager;
+import com.ichi2.anki1.AnkiDb;
+import com.ichi2.anki1.AnkiDroidApp;
+import com.ichi2.anki1.AnkiDroidProxy;
+import com.ichi2.anki1.Deck;
+import com.ichi2.anki1.DeckManager;
+import com.ichi2.anki1.Feedback;
+import com.ichi2.anki1.Reviewer;
+import com.ichi2.anki1.SyncClient;
+import com.ichi2.anki1.Utils;
 import com.tomgibara.android.veecheck.util.PrefSettings;
 
 import org.json.JSONArray;

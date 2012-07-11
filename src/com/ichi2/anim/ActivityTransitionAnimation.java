@@ -1,7 +1,8 @@
 package com.ichi2.anim;
 
-import com.ichi2.anki.R;
-import com.ichi2.anki.StudyOptions;
+import com.ichi2.anki1.R;
+import com.ichi2.anki1.StudyOptions;
+
 import android.app.Activity;
 import android.util.Log;
 

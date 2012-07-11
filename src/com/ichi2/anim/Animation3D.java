@@ -18,7 +18,7 @@
 
 package com.ichi2.anim;
 
-import com.ichi2.anki.Reviewer;
+import com.ichi2.anki1.Reviewer;
 
 import android.view.animation.Animation;
 import android.view.animation.Transformation;

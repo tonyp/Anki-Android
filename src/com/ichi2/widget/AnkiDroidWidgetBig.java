@@ -17,17 +17,17 @@ package com.ichi2.widget;
 import java.io.File;
 import java.util.ArrayList;
 
-import com.ichi2.anki.AnkiDroidApp;
-import com.ichi2.anki.BackupManager;
-import com.ichi2.anki.Card;
-import com.ichi2.anki.CardEditor;
-import com.ichi2.anki.Deck;
-import com.ichi2.anki.DeckManager;
-import com.ichi2.anki.DeckStatus;
-import com.ichi2.anki.DeckTask;
-import com.ichi2.anki.R;
-import com.ichi2.anki.StudyOptions;
-import com.ichi2.anki.Utils;
+import com.ichi2.anki1.R;
+import com.ichi2.anki1.AnkiDroidApp;
+import com.ichi2.anki1.BackupManager;
+import com.ichi2.anki1.Card;
+import com.ichi2.anki1.CardEditor;
+import com.ichi2.anki1.Deck;
+import com.ichi2.anki1.DeckManager;
+import com.ichi2.anki1.DeckStatus;
+import com.ichi2.anki1.DeckTask;
+import com.ichi2.anki1.StudyOptions;
+import com.ichi2.anki1.Utils;
 import com.tomgibara.android.veecheck.util.PrefSettings;
 
 import android.app.PendingIntent;

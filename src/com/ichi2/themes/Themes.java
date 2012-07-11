@@ -16,8 +16,8 @@
 
 package com.ichi2.themes;
 
-import com.ichi2.anki.AnkiDroidApp;
-import com.ichi2.anki.R;
+import com.ichi2.anki1.R;
+import com.ichi2.anki1.AnkiDroidApp;
 import com.tomgibara.android.veecheck.util.PrefSettings;
 
 import android.content.Context;

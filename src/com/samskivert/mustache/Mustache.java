@@ -6,7 +6,7 @@ package com.samskivert.mustache;
 
 import android.util.Log;
 
-import com.ichi2.anki.AnkiDroidApp;
+import com.ichi2.anki1.AnkiDroidApp;
 
 import java.io.IOException;
 import java.io.Reader;

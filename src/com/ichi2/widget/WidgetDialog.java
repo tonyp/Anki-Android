@@ -17,8 +17,8 @@
 
 package com.ichi2.widget;
 
-import com.ichi2.anki.DeckManager;
-import com.ichi2.anki.R;
+import com.ichi2.anki1.R;
+import com.ichi2.anki1.DeckManager;
 import com.ichi2.themes.StyledDialog;
 import com.ichi2.themes.Themes;
 

@@ -14,13 +14,13 @@
 
 package com.ichi2.widget;
 
-import com.ichi2.anki.AnkiDroidApp;
-import com.ichi2.anki.BackupManager;
-import com.ichi2.anki.Deck;
-import com.ichi2.anki.DeckManager;
-import com.ichi2.anki.DeckStatus;
-import com.ichi2.anki.MetaDB;
-import com.ichi2.anki.services.NotificationService;
+import com.ichi2.anki1.AnkiDroidApp;
+import com.ichi2.anki1.BackupManager;
+import com.ichi2.anki1.Deck;
+import com.ichi2.anki1.DeckManager;
+import com.ichi2.anki1.DeckStatus;
+import com.ichi2.anki1.MetaDB;
+import com.ichi2.anki1.services.NotificationService;
 import com.tomgibara.android.veecheck.util.PrefSettings;
 
 import android.content.Context;

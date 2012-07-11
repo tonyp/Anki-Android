@@ -47,10 +47,10 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.ichi2.anim.ActivityTransitionAnimation;
-import com.ichi2.anki.AnkiDroidApp;
-import com.ichi2.anki.R;
-import com.ichi2.anki.Statistics;
-import com.ichi2.anki.StudyOptions;
+import com.ichi2.anki1.R;
+import com.ichi2.anki1.AnkiDroidApp;
+import com.ichi2.anki1.Statistics;
+import com.ichi2.anki1.StudyOptions;
 import com.ichi2.themes.Themes;
 import com.tomgibara.android.veecheck.util.PrefSettings;
 

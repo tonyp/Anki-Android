@@ -13,7 +13,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 
 import android.util.Log;
 
-import com.ichi2.anki.AnkiDroidApp;
+import com.ichi2.anki1.AnkiDroidApp;
 
 public class HttpUtility {
 	public static Boolean postReport(String url, List<NameValuePair> values) {

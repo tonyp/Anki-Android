@@ -1,10 +1,10 @@
 package com.ichi2.widget;
 
-import com.ichi2.anki.AnkiDroidApp;
-import com.ichi2.anki.Card;
-import com.ichi2.anki.Deck;
-import com.ichi2.anki.DeckStatus;
-import com.ichi2.anki.DeckManager;
+import com.ichi2.anki1.AnkiDroidApp;
+import com.ichi2.anki1.Card;
+import com.ichi2.anki1.Deck;
+import com.ichi2.anki1.DeckManager;
+import com.ichi2.anki1.DeckStatus;
 
 import com.tomgibara.android.veecheck.util.PrefSettings;
 
