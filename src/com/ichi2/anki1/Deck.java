@@ -3027,6 +3027,9 @@ public class Deck {
     private double nextInterval(Card card, double delay, int ease) {
         double interval = card.getInterval();
         double factor = card.getFactor();
+        
+        // HACK: disable the SRS algorithm, apply the fixed initial intervals
+        interval = 0;
 
         // if shown early and not failed
         if ((delay < 0) && card.isRev()) {
